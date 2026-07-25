@@ -16,7 +16,8 @@
     groups: {},
     editingId: null, // player currently open in form (null = adding new)
     activeId: null,  // player currently open in detail view
-    activeWidget: 'players', // 'players' | 'lineups'
+    activeWidget: 'players', // 'players' | 'tactics'
+    activeTacticsSubview: 'roles', // 'roles' | 'lineups'
     pitchDisplayMode: 'overall', // what the pitch badges show; restored from settings in init()
   };
   Players.GROUPS.forEach(g => {
@@ -25,6 +26,11 @@
 
   const WIDGETS = [
     { id: 'players', label: 'Players' },
+    { id: 'tactics', label: 'Tactics' },
+  ];
+
+  const TACTICS_SUBVIEWS = [
+    { id: 'roles', label: 'Roles' },
     { id: 'lineups', label: 'Lineups' },
   ];
 
@@ -74,6 +80,7 @@
     UI.populateSelect(UI.el.fieldRole, Players.TACTICAL_ROLES, true);
     UI.renderGroupSegmentedControl(Players.GROUPS, state.activeGroup, onGroupSelect);
     UI.renderWidgetSegmentedControl(WIDGETS, state.activeWidget, onWidgetSelect);
+    UI.renderWidgetSegmentedControl(TACTICS_SUBVIEWS, state.activeTacticsSubview, onTacticsSubviewSelect, UI.el.tacticsSubSegmentedControl);
     renderDisplayModeControl();
     UI.renderSortChips(UI.el.sortChips, Players.SORT_FIELDS, gs().sortKey, onSortSelect);
     UI.renderChipGroup(UI.el.positionChips, Players.POSITIONS, gs().positions, (v) => toggleFilter('positions', v));
@@ -84,6 +91,7 @@
     bindEvents();
     ScreenshotImport.init(applyScreenshotExtraction);
     render();
+    renderRolesPitch();
     renderPitch();
     renderSavedLineupsList();
 
@@ -92,16 +100,33 @@
     }
   }
 
-  // ---------- Widget switch (Squad / Lineups) ----------
+  // ---------- Widget switch (Players / Tactics) ----------
 
   function onWidgetSelect(widgetId) {
     if (widgetId === state.activeWidget || !WIDGETS.some(w => w.id === widgetId)) return;
     state.activeWidget = widgetId;
     UI.renderWidgetSegmentedControl(WIDGETS, state.activeWidget, onWidgetSelect);
     UI.el.squadView.hidden = widgetId !== 'players';
-    UI.el.lineupsView.hidden = widgetId !== 'lineups';
+    UI.el.tacticsView.hidden = widgetId !== 'tactics';
     UI.el.addPlayerBtn.hidden = widgetId !== 'players';
-    if (widgetId === 'lineups') {
+    if (widgetId === 'tactics') {
+      renderRolesPitch();
+      renderPitch();
+      renderSavedLineupsList();
+    }
+  }
+
+  // ---------- Tactics sub-widget switch (Roles / Lineups) ----------
+
+  function onTacticsSubviewSelect(subviewId) {
+    if (subviewId === state.activeTacticsSubview || !TACTICS_SUBVIEWS.some(s => s.id === subviewId)) return;
+    state.activeTacticsSubview = subviewId;
+    UI.renderWidgetSegmentedControl(TACTICS_SUBVIEWS, state.activeTacticsSubview, onTacticsSubviewSelect, UI.el.tacticsSubSegmentedControl);
+    UI.el.rolesSubview.hidden = subviewId !== 'roles';
+    UI.el.lineupsSubview.hidden = subviewId !== 'lineups';
+    if (subviewId === 'roles') {
+      renderRolesPitch();
+    } else {
       renderPitch();
       renderSavedLineupsList();
     }
@@ -144,6 +169,182 @@
     UI.setSortDirectionUI(gs().sortDir);
 
     render();
+  }
+
+  // ---------- Tactics: Roles (tactical reference, no player data) ----------
+
+  // Placeholder content only — see the module comment on renderRoleDetail
+  // in ui.js. Deliberately varies how many mandatory requirements,
+  // attribute tiers, and PlayStyle tiers each role has (including zero
+  // mandatory requirements for some), to prove the detail page's layout
+  // adapts rather than assuming a fixed shape. Real tactical data will
+  // replace this role by role later.
+  const ROLE_DETAILS = {
+    GK: {
+      mandatory: ['High Reflexes'],
+      attributeTiers: [
+        { stars: 5, items: ['Reflexes', 'Handling'] },
+        { stars: 4, items: ['Kicking', 'Sweeper Keeper'] },
+      ],
+      playstyleTiers: [
+        { tier: 'S', items: ['PlayStyle A'] },
+        { tier: 'A', items: ['PlayStyle B', 'PlayStyle C'] },
+        { tier: 'B', items: ['PlayStyle D'] },
+      ],
+    },
+    RB: {
+      mandatory: [],
+      attributeTiers: [
+        { stars: 5, items: ['Pace'] },
+        { stars: 4, items: ['Stamina', 'Crossing'] },
+        { stars: 3, items: ['Tackling'] },
+      ],
+      playstyleTiers: [
+        { tier: 'S', items: ['PlayStyle A'] },
+        { tier: 'A', items: ['PlayStyle B'] },
+        { tier: 'B', items: ['PlayStyle C'] },
+        { tier: 'C', items: ['PlayStyle D'] },
+      ],
+    },
+    RCB: {
+      mandatory: ['Right Foot'],
+      attributeTiers: [
+        { stars: 5, items: ['Passing', 'Composure'] },
+        { stars: 4, items: ['Heading', 'Marking'] },
+      ],
+      playstyleTiers: [
+        { tier: 'S', items: ['PlayStyle A', 'PlayStyle B'] },
+        { tier: 'A', items: ['PlayStyle C'] },
+      ],
+    },
+    LCB: {
+      mandatory: ['Left Foot', 'High Strength'],
+      attributeTiers: [
+        { stars: 5, items: ['Marking', 'Heading'] },
+        { stars: 4, items: ['Strength'] },
+        { stars: 3, items: ['Positioning', 'Tackling'] },
+      ],
+      playstyleTiers: [
+        { tier: 'S', items: ['PlayStyle A'] },
+        { tier: 'B', items: ['PlayStyle B'] },
+      ],
+    },
+    LB: {
+      mandatory: [],
+      attributeTiers: [
+        { stars: 5, items: ['Stamina'] },
+        { stars: 4, items: ['Pace', 'Crossing'] },
+      ],
+      playstyleTiers: [
+        { tier: 'A', items: ['PlayStyle A'] },
+        { tier: 'B', items: ['PlayStyle B'] },
+      ],
+    },
+    RCM: {
+      mandatory: ['Right Foot', 'High Stamina'],
+      attributeTiers: [
+        { stars: 5, items: ['Short Passing', 'Interceptions', 'Defensive Awareness'] },
+        { stars: 4, items: ['Composure', 'Aggression'] },
+        { stars: 3, items: ['Ball Control'] },
+      ],
+      playstyleTiers: [
+        { tier: 'S', items: ['PlayStyle A', 'PlayStyle B', 'PlayStyle C'] },
+        { tier: 'A', items: ['PlayStyle D', 'PlayStyle E'] },
+        { tier: 'B', items: ['PlayStyle F', 'PlayStyle G'] },
+        { tier: 'C', items: ['PlayStyle H'] },
+        { tier: 'D', items: ['PlayStyle I'] },
+      ],
+    },
+    LCM: {
+      mandatory: ['High Stamina'],
+      attributeTiers: [
+        { stars: 5, items: ['Stamina', 'Work Rate'] },
+        { stars: 4, items: ['Short Passing', 'Tackling'] },
+        { stars: 3, items: ['Shot Power'] },
+      ],
+      playstyleTiers: [
+        { tier: 'S', items: ['PlayStyle A'] },
+        { tier: 'A', items: ['PlayStyle B', 'PlayStyle C'] },
+        { tier: 'B', items: ['PlayStyle D'] },
+        { tier: 'C', items: ['PlayStyle E'] },
+        { tier: 'D', items: ['PlayStyle F'] },
+      ],
+    },
+    CAM: {
+      mandatory: ['High Finishing'],
+      attributeTiers: [
+        { stars: 5, items: ['Finishing', 'Positioning'] },
+        { stars: 4, items: ['Vision'] },
+      ],
+      playstyleTiers: [
+        { tier: 'S', items: ['PlayStyle A', 'PlayStyle B'] },
+        { tier: 'A', items: ['PlayStyle C'] },
+      ],
+    },
+    RW: {
+      mandatory: [],
+      attributeTiers: [
+        { stars: 5, items: ['Dribbling', 'Pace'] },
+        { stars: 4, items: ['Finishing', 'Curve'] },
+        { stars: 3, items: ['Crossing'] },
+      ],
+      playstyleTiers: [
+        { tier: 'S', items: ['PlayStyle A'] },
+        { tier: 'A', items: ['PlayStyle B'] },
+        { tier: 'B', items: ['PlayStyle C'] },
+      ],
+    },
+    ST: {
+      mandatory: ['High Finishing', 'Right Foot'],
+      attributeTiers: [
+        { stars: 5, items: ['Finishing', 'Positioning', 'Pace'] },
+        { stars: 4, items: ['Heading'] },
+      ],
+      playstyleTiers: [
+        { tier: 'S', items: ['PlayStyle A', 'PlayStyle B', 'PlayStyle C'] },
+        { tier: 'A', items: ['PlayStyle D'] },
+      ],
+    },
+    LW: {
+      mandatory: [],
+      attributeTiers: [
+        { stars: 5, items: ['Dribbling', 'Pace'] },
+        { stars: 4, items: ['Finishing', 'Curve'] },
+        { stars: 3, items: ['Crossing'] },
+      ],
+      playstyleTiers: [
+        { tier: 'S', items: ['PlayStyle A'] },
+        { tier: 'A', items: ['PlayStyle B'] },
+        { tier: 'B', items: ['PlayStyle C'] },
+      ],
+    },
+  };
+
+  function renderRolesPitch() {
+    const formation = Lineups.getFormation(lineupState.formationId);
+    UI.el.rolesFormationLabel.textContent = formation.label;
+
+    UI.el.rolesPitch.innerHTML = formation.slots.map(slot => `
+      <div class="pitch-slot" style="left:${slot.x}%; top:${slot.y}%;" data-slot-key="${UI.escapeHtml(slot.key)}">
+        <button type="button" class="pitch-slot__main" data-slot-key="${UI.escapeHtml(slot.key)}"
+          aria-label="${UI.escapeHtml(slot.label)} - ${UI.escapeHtml(slot.role)}">
+          <span class="pitch-slot__marker">${UI.escapeHtml(slot.label)}</span>
+          <span class="pitch-slot__name">${UI.escapeHtml(slot.role)}</span>
+        </button>
+      </div>
+    `).join('');
+
+    UI.el.rolesPitch.querySelectorAll('.pitch-slot__main').forEach(btn => {
+      btn.addEventListener('click', () => openRoleDetail(btn.dataset.slotKey));
+    });
+  }
+
+  function openRoleDetail(slotKey) {
+    const formation = Lineups.getFormation(lineupState.formationId);
+    const slot = formation.slots.find(s => s.key === slotKey);
+    if (!slot) return;
+    UI.renderRoleDetail(slot, ROLE_DETAILS[slotKey]);
+    UI.openSheet(UI.el.roleDetailBackdrop, UI.el.roleDetailSheet);
   }
 
   // ---------- Lineups: pitch rendering ----------
@@ -544,10 +745,15 @@
     document.getElementById('infoOkBtn').addEventListener('click', UI.closeInfo);
     UI.el.infoBackdrop.addEventListener('click', UI.closeInfo);
 
-    // ---- Lineups ----
+    // ---- Tactics ----
     UI.el.manageTacticsBtn.addEventListener('click', () => {
       UI.openInfo('Manage Tactics', 'Coming soon — you\u2019ll be able to create custom formations and role layouts here.');
     });
+    UI.el.rolesManageTacticsBtn.addEventListener('click', () => {
+      UI.openInfo('Manage Tactics', 'Coming soon — you\u2019ll be able to create custom formations and role layouts here.');
+    });
+    UI.el.roleDetailCloseBtn.addEventListener('click', () => UI.closeSheet(UI.el.roleDetailBackdrop, UI.el.roleDetailSheet));
+    UI.el.roleDetailBackdrop.addEventListener('click', () => UI.closeSheet(UI.el.roleDetailBackdrop, UI.el.roleDetailSheet));
     UI.el.newLineupBtn.addEventListener('click', onNewLineup);
     UI.el.saveLineupBtn.addEventListener('click', openSaveLineupDialog);
     UI.el.saveLineupCancelBtn.addEventListener('click', () => UI.closeSheet(UI.el.saveLineupBackdrop, UI.el.saveLineupDialog));

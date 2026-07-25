@@ -12,7 +12,13 @@ const UI = (() => {
     groupSegmentedControl: document.getElementById('groupSegmentedControl'),
     widgetSegmentedControl: document.getElementById('widgetSegmentedControl'),
     squadView: document.getElementById('squadView'),
-    lineupsView: document.getElementById('lineupsView'),
+    tacticsView: document.getElementById('tacticsView'),
+    tacticsSubSegmentedControl: document.getElementById('tacticsSubSegmentedControl'),
+    rolesSubview: document.getElementById('rolesSubview'),
+    rolesFormationLabel: document.getElementById('rolesFormationLabel'),
+    rolesManageTacticsBtn: document.getElementById('rolesManageTacticsBtn'),
+    rolesPitch: document.getElementById('rolesPitch'),
+    lineupsSubview: document.getElementById('lineupsSubview'),
     formationLabel: document.getElementById('formationLabel'),
     manageTacticsBtn: document.getElementById('manageTacticsBtn'),
     displayModeControl: document.getElementById('displayModeControl'),
@@ -21,6 +27,19 @@ const UI = (() => {
     saveLineupBtn: document.getElementById('saveLineupBtn'),
     savedLineupsList: document.getElementById('savedLineupsList'),
     lineupsEmptyState: document.getElementById('lineupsEmptyState'),
+    roleDetailBackdrop: document.getElementById('roleDetailBackdrop'),
+    roleDetailSheet: document.getElementById('roleDetailSheet'),
+    roleDetailCloseBtn: document.getElementById('roleDetailCloseBtn'),
+    roleDetailSheetLabel: document.getElementById('roleDetailSheetLabel'),
+    roleDetailName: document.getElementById('roleDetailName'),
+    roleDetailFocus: document.getElementById('roleDetailFocus'),
+    roleDetailPositionTag: document.getElementById('roleDetailPositionTag'),
+    roleDetailMandatorySection: document.getElementById('roleDetailMandatorySection'),
+    roleDetailMandatoryList: document.getElementById('roleDetailMandatoryList'),
+    roleDetailAttributesSection: document.getElementById('roleDetailAttributesSection'),
+    roleDetailAttributesTiers: document.getElementById('roleDetailAttributesTiers'),
+    roleDetailPlaystylesSection: document.getElementById('roleDetailPlaystylesSection'),
+    roleDetailPlaystyleTiers: document.getElementById('roleDetailPlaystyleTiers'),
     playerSelectorBackdrop: document.getElementById('playerSelectorBackdrop'),
     playerSelectorSheet: document.getElementById('playerSelectorSheet'),
     closePlayerSelectorBtn: document.getElementById('closePlayerSelectorBtn'),
@@ -159,12 +178,13 @@ const UI = (() => {
   }
 
   /** Same idea as renderGroupSegmentedControl, for the top-level Squad/Lineups switch. */
-  function renderWidgetSegmentedControl(items, activeId, onSelect) {
-    el.widgetSegmentedControl.innerHTML = items.map(it => `
+  function renderWidgetSegmentedControl(items, activeId, onSelect, container) {
+    const target = container || el.widgetSegmentedControl;
+    target.innerHTML = items.map(it => `
       <button type="button" class="segmented-control__btn ${it.id === activeId ? 'is-active' : ''}"
         data-widget="${escapeHtml(it.id)}" role="tab" aria-selected="${it.id === activeId}">${escapeHtml(it.label)}</button>
     `).join('');
-    el.widgetSegmentedControl.querySelectorAll('.segmented-control__btn').forEach(btn => {
+    target.querySelectorAll('.segmented-control__btn').forEach(btn => {
       btn.addEventListener('click', () => onSelect(btn.dataset.widget));
     });
   }
@@ -489,6 +509,59 @@ const UI = (() => {
     el.infoDialog.hidden = true;
   }
 
+  // ---------- Role detail (tactical reference) ----------
+
+  /**
+   * Populates the full-screen Role Detail sheet. `data` is placeholder
+   * content for now — see app.js's ROLE_DETAILS — but the shape (a
+   * variable number of mandatory requirements, attribute tiers, and
+   * PlayStyle tiers, each with a variable number of items) is exactly
+   * what real tactical data will eventually look like, so nothing here
+   * needs to change once that's added.
+   */
+  function renderRoleDetail(slot, data) {
+    el.roleDetailSheetLabel.textContent = 'Role';
+    el.roleDetailName.textContent = slot.role;
+    el.roleDetailFocus.textContent = slot.focus;
+    el.roleDetailPositionTag.textContent = slot.label;
+
+    const mandatory = (data && data.mandatory) || [];
+    el.roleDetailMandatoryList.innerHTML = mandatory.length
+      ? mandatory.map(m => `<li>${escapeHtml(m)}</li>`).join('')
+      : `<p class="role-detail__empty">No mandatory requirements for this role.</p>`;
+
+    const attributeTiers = (data && data.attributeTiers) || [];
+    el.roleDetailAttributesTiers.innerHTML = attributeTiers.length
+      ? attributeTiers.map(tier => {
+          const stars = Array.from({ length: 5 }, (_, i) => `<span class="${i < tier.stars ? '' : 'is-empty'}">★</span>`).join('');
+          const items = tier.items.map(a => `<li>${escapeHtml(a)}</li>`).join('');
+          return `
+            <div class="attribute-tier">
+              <div class="attribute-tier__stars">${stars}</div>
+              <ul class="role-detail__list">${items}</ul>
+            </div>
+          `;
+        }).join('')
+      : `<p class="role-detail__empty">No key attributes listed yet.</p>`;
+
+    const playstyleTiers = (data && data.playstyleTiers) || [];
+    el.roleDetailPlaystyleTiers.innerHTML = playstyleTiers.length
+      ? playstyleTiers.map(tier => {
+          const badgeClass = tier.tier === 'S' ? '' : ` playstyle-tier__badge--${tier.tier.toLowerCase()}`;
+          const items = tier.items.map(s => `<li>${escapeHtml(s)}</li>`).join('');
+          return `
+            <div class="playstyle-tier">
+              <div class="playstyle-tier__header">
+                <span class="playstyle-tier__badge${badgeClass}">${escapeHtml(tier.tier)}</span>
+                <span class="playstyle-tier__label">${escapeHtml(tier.tier)} Tier</span>
+              </div>
+              <ul class="role-detail__list">${items}</ul>
+            </div>
+          `;
+        }).join('')
+      : `<p class="role-detail__empty">No PlayStyle tiers listed yet.</p>`;
+  }
+
   // ---------- Toast ----------
 
   function showToast(message) {
@@ -523,6 +596,7 @@ const UI = (() => {
     openConfirm, closeConfirm,
     openInfo, closeInfo,
     renderLastBackupText,
+    renderRoleDetail,
     showToast,
   };
 })();
