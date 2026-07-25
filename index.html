@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Squad Hub — Career Mode Squad Manager</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="app-header__title">
+      <span class="app-header__crest">⚽</span>
+      <div>
+        <h1>Squad Hub</h1>
+        <p class="app-header__subtitle" id="squadCount">0 players</p>
+      </div>
+    </div>
+    <div class="app-header__actions">
+      <button class="btn btn--icon" id="openBackupBtn" aria-label="Open data and backup" aria-haspopup="dialog" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+      </button>
+      <button class="btn btn--icon" id="openFiltersBtn" aria-label="Open filters and sorting" aria-haspopup="dialog" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="7" y1="12" x2="17" y2="12"></line><line x1="10" y1="18" x2="14" y2="18"></line></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Top-level widget switch (Squad / Lineups) -->
+  <div class="segmented-control" id="widgetSegmentedControl" role="tablist" aria-label="Switch widget"></div>
+
+  <div id="squadView">
+
+    <!-- Squad section switch (First Team / Academy / future sections) -->
+    <div class="segmented-control" id="groupSegmentedControl" role="tablist" aria-label="Switch squad section"></div>
+
+    <!-- Search -->
+    <div class="search-bar">
+      <svg class="search-bar__icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input type="search" id="searchInput" placeholder="Search by player name…" autocomplete="off" aria-label="Search players by name">
+      <button class="search-bar__clear" id="clearSearchBtn" aria-label="Clear search" hidden>&times;</button>
+    </div>
+
+    <!-- Active filter chips -->
+    <div class="active-filters" id="activeFilters" hidden></div>
+
+    <!-- Squad list -->
+    <main class="squad-list" id="squadList" aria-live="polite"></main>
+
+    <!-- Empty state -->
+    <div class="empty-state" id="emptyState" hidden>
+      <div class="empty-state__icon">🗒️</div>
+      <h2>No players match</h2>
+      <p id="emptyStateText">Try adjusting your search or filters.</p>
+      <button class="btn btn--ghost" id="emptyStateClearBtn" hidden>Clear filters</button>
+    </div>
+
+    <!-- Add Player button (always visible, thumb-friendly, above iPhone safe-area) -->
+    <button class="add-player-btn" id="addPlayerBtn">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      <span>Add Player</span>
+    </button>
+
+  </div>
+
+  <!-- Lineups widget -->
+  <div id="lineupsView" hidden>
+
+    <div class="lineup-toolbar">
+      <div class="lineup-toolbar__formation" id="formationLabel">4-3-3 Attack</div>
+      <button class="btn btn--ghost btn--small" id="manageTacticsBtn">Manage Tactics</button>
+    </div>
+
+    <div class="display-mode-control" id="displayModeControl" role="tablist" aria-label="Choose what the pitch badges show"></div>
+
+    <div class="pitch" id="pitch"></div>
+
+    <div class="lineup-actions">
+      <button class="btn btn--ghost" id="newLineupBtn">New Lineup</button>
+      <button class="btn btn--primary" id="saveLineupBtn">Save Lineup</button>
+    </div>
+
+    <h2 class="lineup-section-title">Saved Lineups</h2>
+    <div id="savedLineupsList"></div>
+    <div class="empty-state" id="lineupsEmptyState" hidden>
+      <div class="empty-state__icon">📋</div>
+      <h2>No saved lineups yet</h2>
+      <p>Build a starting XI on the pitch above, then tap Save Lineup.</p>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Filters / Sort Sheet -->
+<div class="sheet-backdrop" id="filtersBackdrop" hidden></div>
+<div class="sheet" id="filtersSheet" role="dialog" aria-modal="true" aria-labelledby="filtersTitle" hidden>
+  <div class="sheet__handle"></div>
+  <div class="sheet__header">
+    <h2 id="filtersTitle">Sort &amp; Filter</h2>
+    <button class="btn btn--icon" id="closeFiltersBtn" aria-label="Close">&times;</button>
+  </div>
+
+  <div class="sheet__body">
+    <section class="sheet__section">
+      <h3>Sort by</h3>
+      <div class="chip-group" id="sortChips" role="group" aria-label="Sort by"></div>
+      <button class="sort-direction" id="sortDirectionBtn" type="button">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="sortDirectionIcon"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+        <span id="sortDirectionLabel">Ascending</span>
+      </button>
+    </section>
+
+    <section class="sheet__section">
+      <h3>Position</h3>
+      <div class="chip-group" id="positionChips" role="group" aria-label="Filter by position"></div>
+    </section>
+
+    <section class="sheet__section">
+      <h3>Tactical role</h3>
+      <div class="chip-group" id="roleChips" role="group" aria-label="Filter by tactical role"></div>
+    </section>
+  </div>
+
+  <div class="sheet__footer">
+    <button class="btn btn--ghost" id="clearFiltersBtn">Clear all filters</button>
+    <button class="btn btn--primary" id="applyFiltersBtn">Show results</button>
+  </div>
+</div>
+
+<!-- Player Form (Add/Edit) -->
+<div class="sheet-backdrop" id="formBackdrop" hidden></div>
+<div class="sheet sheet--full" id="formSheet" role="dialog" aria-modal="true" aria-labelledby="formTitle" hidden>
+  <div class="sheet__header sheet__header--center">
+    <h2 id="formTitle">Add player</h2>
+  </div>
+
+  <form class="sheet__body player-form" id="playerForm" novalidate>
+
+    <button type="button" class="btn btn--import" id="importScreenshotBtn">
+      <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="12" cy="12" r="3.5"></circle><path d="M8 5l1.5-2h5L16 5"></path></svg>
+      Import from Screenshot
+    </button>
+
+    <div class="field">
+      <label for="fieldName">Name</label>
+      <input type="text" id="fieldName" name="name" required maxlength="60">
+      <p class="field__error" id="errorName" hidden>Enter a player name.</p>
+    </div>
+
+    <div class="field">
+      <label for="fieldSquadSection">Squad section</label>
+      <select id="fieldSquadSection" name="squadSection" required></select>
+      <p class="field__error" id="errorSquadSection" hidden>Choose a squad section.</p>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="fieldAge">Age</label>
+        <input type="number" id="fieldAge" name="age" min="15" max="45" inputmode="numeric" required>
+        <p class="field__error" id="errorAge" hidden>Age must be 15–45.</p>
+      </div>
+      <div class="field">
+        <label for="fieldValue">Value <span class="field__optional">(£, optional)</span></label>
+        <input type="text" id="fieldValue" name="value" inputmode="decimal" autocomplete="off">
+        <p class="field__hint">Enter the full amount in pounds. Displayed as £ with thousands separators and two decimal places.</p>
+        <p class="field__error" id="errorValue" hidden>Enter 0 or more.</p>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="fieldOverall">Overall</label>
+        <input type="number" id="fieldOverall" name="overall" min="1" max="99" inputmode="numeric" required>
+        <p class="field__error" id="errorOverall" hidden>Overall must be 1–99.</p>
+      </div>
+      <div class="field">
+        <label for="fieldPotential">Potential</label>
+        <div class="potential-input-row">
+          <input type="number" id="fieldPotential" name="potential" min="1" max="99" inputmode="numeric" required>
+          <button type="button" class="btn btn--icon btn--calc" id="calcPotentialBtn" aria-label="Calculate potential">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8L19 13M15 9h0M17.8 6.2L19 5M3 21l9-9M12.2 6.2L11 5"></path></svg>
+          </button>
+        </div>
+        <p class="field__hint">Uses Age, Overall, Position and Value.</p>
+        <p class="field__error" id="errorPotential" hidden>Potential must be 1–99 and ≥ Overall.</p>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="fieldPosition">Primary position</label>
+      <select id="fieldPosition" name="position" required></select>
+    </div>
+
+    <div class="field">
+      <label for="fieldRole">Tactical role <span class="field__optional">(optional)</span></label>
+      <select id="fieldRole" name="role"></select>
+    </div>
+
+    <div class="field">
+      <label>PlayStyles <span class="field__optional">(optional)</span></label>
+      <p class="field__hint">Tap all the PlayStyles this player has.</p>
+      <div class="chip-group chip-group--scroll" id="playstylesChips"></div>
+    </div>
+
+    <div class="field">
+      <label>PlayStyle+ <span class="field__optional">(optional)</span></label>
+      <p class="field__hint">Tap any PlayStyles that are upgraded to PlayStyle+.</p>
+      <div class="chip-group chip-group--scroll" id="playstylesPlusChips"></div>
+    </div>
+
+    <div class="field">
+      <label for="fieldNotes">Notes <span class="field__optional">(optional)</span></label>
+      <textarea id="fieldNotes" name="notes" rows="4" maxlength="500"></textarea>
+    </div>
+
+    <button type="submit" hidden></button>
+  </form>
+
+  <div class="sheet__footer">
+    <button class="btn btn--ghost" id="formCancelBtn" type="button">Cancel</button>
+    <button class="btn btn--primary" id="formSaveBtn" type="button">Add Player</button>
+  </div>
+</div>
+
+<!-- Player Detail View -->
+<div class="sheet-backdrop" id="detailBackdrop" hidden></div>
+<div class="sheet sheet--full" id="detailSheet" role="dialog" aria-modal="true" aria-labelledby="detailName" hidden>
+  <div class="sheet__header">
+    <button class="btn btn--text" id="detailCloseBtn">Close</button>
+    <h2 id="detailSheetLabel">Player</h2>
+    <button class="btn btn--text btn--text-primary" id="detailEditBtn">Edit</button>
+  </div>
+
+  <div class="sheet__body detail-view">
+    <div class="detail-view__top">
+      <div class="rating-plate rating-plate--lg">
+        <span class="rating-plate__ovr" id="detailOverall">83</span>
+        <span class="rating-plate__arrow">→</span>
+        <span class="rating-plate__pot" id="detailPotential">89</span>
+      </div>
+      <div>
+        <h3 id="detailName">Player Name</h3>
+        <p class="detail-view__meta" id="detailMeta">Age 21 · ST</p>
+      </div>
+    </div>
+
+    <div class="detail-view__tags">
+      <span class="tag tag--position" id="detailPosition">ST</span>
+      <span class="tag tag--role" id="detailRole">Advanced Forward</span>
+      <span class="tag tag--styles" id="detailStyles">3 PlayStyles</span>
+    </div>
+
+    <section class="detail-view__section" id="detailValueRow" hidden>
+      <h4>Value</h4>
+      <p class="detail-view__value" id="detailValue">£0.00</p>
+    </section>
+
+    <section class="detail-view__section">
+      <h4>PlayStyles</h4>
+      <div class="detail-view__tag-list" id="detailStylesList"></div>
+    </section>
+
+    <section class="detail-view__section" id="detailStylesPlusRow" hidden>
+      <h4>PlayStyle+</h4>
+      <div class="detail-view__tag-list" id="detailStylesPlusList"></div>
+    </section>
+
+    <section class="detail-view__section">
+      <h4>Notes</h4>
+      <p class="detail-view__notes" id="detailNotes">—</p>
+    </section>
+
+    <button class="btn btn--ghost" id="detailMoveGroupBtn">Move</button>
+    <button class="btn btn--danger" id="detailDeleteBtn">Delete player</button>
+  </div>
+</div>
+
+<!-- Delete confirm -->
+<div class="sheet-backdrop" id="confirmBackdrop" hidden></div>
+<div class="confirm-dialog" id="confirmDialog" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" hidden>
+  <h3 id="confirmTitle">Delete this player?</h3>
+  <p id="confirmText">This can't be undone.</p>
+  <div class="confirm-dialog__actions">
+    <button class="btn btn--ghost" id="confirmCancelBtn">Cancel</button>
+    <button class="btn btn--danger" id="confirmDeleteBtn">Delete</button>
+  </div>
+</div>
+
+<!-- Info dialog (single button, e.g. screenshot-import placeholder) -->
+<div class="sheet-backdrop" id="infoBackdrop" hidden></div>
+<div class="confirm-dialog" id="infoDialog" role="alertdialog" aria-modal="true" aria-labelledby="infoTitle" hidden>
+  <h3 id="infoTitle">Coming soon</h3>
+  <p id="infoText"></p>
+  <div class="confirm-dialog__actions">
+    <button class="btn btn--primary" id="infoOkBtn">Got it</button>
+  </div>
+</div>
+
+<!-- Data & Backup -->
+<div class="sheet-backdrop" id="backupBackdrop" hidden></div>
+<div class="sheet" id="backupSheet" role="dialog" aria-modal="true" aria-labelledby="backupTitle" hidden>
+  <div class="sheet__handle"></div>
+  <div class="sheet__header">
+    <h2 id="backupTitle">Data &amp; Backup</h2>
+    <button class="btn btn--icon" id="closeBackupBtn" aria-label="Close">&times;</button>
+  </div>
+
+  <div class="sheet__body">
+    <p class="field__hint">Export a backup before replacing or reinstalling the app. Importing a backup can restore your entire squad.</p>
+    <p class="backup-last-exported" id="lastBackupText">No backup exported yet.</p>
+
+    <div class="backup-actions">
+      <button class="btn btn--backup-export" id="exportBackupBtn" type="button">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><polyline points="7 10 12 15 17 10"></polyline><path d="M5 21h14"></path></svg>
+        Export squad backup
+      </button>
+      <button class="btn btn--backup-import" id="importBackupBtn" type="button">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9"></path><polyline points="7 14 12 9 17 14"></polyline><path d="M5 3h14"></path></svg>
+        Import squad backup
+      </button>
+    </div>
+    <input type="file" id="importFileInput" accept="application/json,.json" hidden>
+  </div>
+</div>
+
+<!-- Import options (mode + duplicate strategy), shown after a backup file passes validation -->
+<div class="sheet-backdrop" id="importBackdrop" hidden></div>
+<div class="sheet" id="importSheet" role="dialog" aria-modal="true" aria-labelledby="importTitle" hidden>
+  <div class="sheet__handle"></div>
+  <div class="sheet__header">
+    <h2 id="importTitle">Import Backup</h2>
+    <button class="btn btn--icon" id="closeImportBtn" aria-label="Close">&times;</button>
+  </div>
+
+  <div class="sheet__body">
+    <p class="field__hint" id="importSummaryText">Found 0 players in this backup.</p>
+
+    <section class="sheet__section">
+      <h3>How should this be imported?</h3>
+      <div class="chip-group" id="importModeChips"></div>
+    </section>
+
+    <section class="sheet__section" id="importDuplicateSection" hidden>
+      <h3>Duplicate players</h3>
+      <p class="field__hint" id="importDuplicateText"></p>
+      <div class="chip-group" id="importDuplicateChips"></div>
+    </section>
+  </div>
+
+  <div class="sheet__footer">
+    <button class="btn btn--ghost" id="importCancelBtn" type="button">Cancel</button>
+    <button class="btn btn--primary" id="importConfirmBtn" type="button">Import</button>
+  </div>
+</div>
+
+<!-- Import from Screenshot: Attributes + Financial screenshots of one player -->
+<div class="sheet-backdrop" id="screenshotBackdrop" hidden></div>
+<div class="sheet" id="screenshotSheet" role="dialog" aria-modal="true" aria-labelledby="screenshotTitle" hidden>
+  <div class="sheet__handle"></div>
+  <div class="sheet__header">
+    <h2 id="screenshotTitle">Import from Screenshot</h2>
+    <button class="btn btn--icon" id="closeScreenshotBtn" aria-label="Close">&times;</button>
+  </div>
+
+  <div class="sheet__body">
+    <p class="field__hint">Select one or both: the Attributes screenshot fills in Name, Age, Overall, Position, and PlayStyles; the Financial screenshot fills in Market Value. The images are only read locally to fill in the form below — they're never saved, uploaded, or stored anywhere.</p>
+
+    <div class="field">
+      <label for="screenshotAttributesInput">Attributes screenshot <span class="field__optional">(optional)</span></label>
+      <input type="file" id="screenshotAttributesInput" accept="image/*">
+      <p class="screenshot-file-name" id="screenshotAttributesName">No file selected.</p>
+    </div>
+
+    <div class="field">
+      <label for="screenshotFinancialInput">Financial screenshot <span class="field__optional">(optional)</span></label>
+      <input type="file" id="screenshotFinancialInput" accept="image/*">
+      <p class="screenshot-file-name" id="screenshotFinancialName">No file selected.</p>
+    </div>
+
+    <p class="screenshot-status" id="screenshotStatus" hidden>Reading screenshots…</p>
+    <p class="field__error screenshot-error" id="screenshotError" hidden></p>
+  </div>
+
+  <div class="sheet__footer">
+    <button class="btn btn--ghost" id="screenshotCancelBtn" type="button">Cancel</button>
+    <button class="btn btn--primary" id="screenshotExtractBtn" type="button" disabled>Extract &amp; Continue</button>
+  </div>
+</div>
+
+<!-- Player Selector (tapping a pitch position) -->
+<div class="sheet-backdrop" id="playerSelectorBackdrop" hidden></div>
+<div class="sheet" id="playerSelectorSheet" role="dialog" aria-modal="true" aria-labelledby="playerSelectorTitle" hidden>
+  <div class="sheet__handle"></div>
+  <div class="sheet__header">
+    <h2 id="playerSelectorTitle">Choose a player</h2>
+    <button class="btn btn--icon" id="closePlayerSelectorBtn" aria-label="Close">&times;</button>
+  </div>
+  <div class="sheet__body">
+    <button type="button" class="btn btn--danger" id="playerSelectorClearBtn" hidden>Clear this position</button>
+    <div id="playerSelectorList"></div>
+    <p class="empty-state__text" id="playerSelectorEmpty" hidden>No players in your squad yet.</p>
+  </div>
+</div>
+
+<!-- Save Lineup name prompt -->
+<div class="sheet-backdrop" id="saveLineupBackdrop" hidden></div>
+<div class="confirm-dialog" id="saveLineupDialog" role="alertdialog" aria-modal="true" aria-labelledby="saveLineupTitle" hidden>
+  <h3 id="saveLineupTitle">Save Lineup</h3>
+  <div class="field">
+    <label for="lineupNameInput">Lineup name</label>
+    <input type="text" id="lineupNameInput" maxlength="60">
+  </div>
+  <div class="confirm-dialog__actions">
+    <button class="btn btn--ghost" id="saveLineupCancelBtn">Cancel</button>
+    <button class="btn btn--primary" id="saveLineupConfirmBtn">Save</button>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="js/storage.js"></script>
+<script src="js/players.js"></script>
+<script src="js/calculator.js"></script>
+<script src="js/lineups.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/import.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
