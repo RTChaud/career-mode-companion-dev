@@ -49,10 +49,9 @@ const Lineups = (() => {
     'Sweeper Keeper': {
       keyAttributes: ['Reflexes', 'Diving', 'Handling', 'Kicking', 'Positioning', 'Reactions'],
       playstyleTiers: {
-        S: ['Footwork', 'Far Throw'],
-        A: ['Deflector', 'Cross Claimer'],
-        B: ['Rush Out', 'Far Reach'],
-        C: ['Quick Step'],
+        S: ['Footwork', 'Far Throw', 'Deflector'],
+        A: ['Cross Claimer', 'Rush Out', 'Far Reach'],
+        B: ['Quick Step'],
       },
       lowValuePlaystyles: ['Long Throw', 'Bruiser', 'Power Header'],
     },
