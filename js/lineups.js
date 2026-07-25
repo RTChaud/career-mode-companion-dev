@@ -69,20 +69,18 @@ const Lineups = (() => {
     'Defender': {
       keyAttributes: ['Defensive Awareness', 'Standing Tackle', 'Strength', 'Aggression', 'Reactions'],
       playstyleTiers: {
-        S: ['Anticipate', 'Block'],
-        A: ['Bruiser', 'Intercept'],
-        B: ['Aerial', 'Jockey'],
-        C: ['Slide Tackle'],
+        S: ['Anticipate', 'Block', 'Bruiser'],
+        A: ['Intercept', 'Aerial', 'Jockey'],
+        B: ['Slide Tackle'],
       },
       lowValuePlaystyles: ['Finesse Shot', 'Technical', 'Flair'],
     },
     'Fullback': {
       keyAttributes: ['Pace', 'Stamina', 'Defensive Awareness', 'Short Passing', 'Crossing'],
       playstyleTiers: {
-        S: ['Rapid', 'Quick Step'],
-        A: ['Intercept', 'Jockey', 'Whipped Pass'],
-        B: ['Bruiser', 'Pinged Pass'],
-        C: ['Slide Tackle'],
+        S: ['Rapid', 'Quick Step', 'Intercept'],
+        A: ['Jockey', 'Whipped Pass', 'Pinged Pass'],
+        B: ['Bruiser', 'Slide Tackle'],
       },
       lowValuePlaystyles: ['Power Header', 'Chip Shot', 'Long Throw'],
     },
