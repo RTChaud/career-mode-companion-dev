@@ -47,6 +47,12 @@
     <!-- Active filter chips -->
     <div class="active-filters" id="activeFilters" hidden></div>
 
+    <!-- Shortlist total (shown only while the Shortlist section is active) -->
+    <div class="shortlist-total" id="shortlistTotal" hidden>
+      <span>Total Price</span>
+      <span id="shortlistTotalValue">£0.00</span>
+    </div>
+
     <!-- Squad list -->
     <main class="squad-list" id="squadList" aria-live="polite"></main>
 
@@ -164,7 +170,7 @@
         <p class="field__error" id="errorAge" hidden>Age must be 15–45.</p>
       </div>
       <div class="field">
-        <label for="fieldValue">Value <span class="field__optional">(£, optional)</span></label>
+        <label for="fieldValue"><span id="fieldValueLabel">Value</span> <span class="field__optional">(£, optional)</span></label>
         <input type="text" id="fieldValue" name="value" inputmode="decimal" autocomplete="off">
         <p class="field__hint">Enter the full amount in pounds. Displayed as £ with thousands separators and two decimal places.</p>
         <p class="field__error" id="errorValue" hidden>Enter 0 or more.</p>
@@ -255,7 +261,7 @@
     </div>
 
     <section class="detail-view__section" id="detailValueRow" hidden>
-      <h4>Value</h4>
+      <h4 id="detailValueLabel">Value</h4>
       <p class="detail-view__value" id="detailValue">£0.00</p>
     </section>
 
@@ -275,6 +281,7 @@
     </section>
 
     <button class="btn btn--ghost" id="detailMoveGroupBtn">Move</button>
+    <button class="btn btn--primary" id="detailSignPlayerBtn" hidden>Sign Player</button>
     <button class="btn btn--danger" id="detailDeleteBtn">Delete player</button>
   </div>
 </div>
@@ -367,7 +374,7 @@
   </div>
 
   <div class="sheet__body">
-    <p class="field__hint">Select one or both: the Attributes screenshot fills in Name, Age, Overall, Position, and PlayStyles; the Financial screenshot fills in Market Value. The images are only read locally to fill in the form below — they're never saved, uploaded, or stored anywhere.</p>
+    <p class="field__hint">Select one or both. The Attributes screenshot fills in Name, Age, Overall, Position, and PlayStyles (a Global Transfer Network screenshot also fills in Potential). The Financial screenshot fills in Market Value. The images are only read locally to fill in the form below — they're never saved, uploaded, or stored anywhere.</p>
 
     <div class="field">
       <label for="screenshotAttributesInput">Attributes screenshot <span class="field__optional">(optional)</span></label>
