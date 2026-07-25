@@ -16,7 +16,7 @@
     groups: {},
     editingId: null, // player currently open in form (null = adding new)
     activeId: null,  // player currently open in detail view
-    activeWidget: 'squad', // 'squad' | 'lineups'
+    activeWidget: 'players', // 'players' | 'lineups'
     pitchDisplayMode: 'overall', // what the pitch badges show; restored from settings in init()
   };
   Players.GROUPS.forEach(g => {
@@ -24,7 +24,7 @@
   });
 
   const WIDGETS = [
-    { id: 'squad', label: 'Squad' },
+    { id: 'players', label: 'Players' },
     { id: 'lineups', label: 'Lineups' },
   ];
 
@@ -98,9 +98,9 @@
     if (widgetId === state.activeWidget || !WIDGETS.some(w => w.id === widgetId)) return;
     state.activeWidget = widgetId;
     UI.renderWidgetSegmentedControl(WIDGETS, state.activeWidget, onWidgetSelect);
-    UI.el.squadView.hidden = widgetId !== 'squad';
+    UI.el.squadView.hidden = widgetId !== 'players';
     UI.el.lineupsView.hidden = widgetId !== 'lineups';
-    UI.el.addPlayerBtn.hidden = widgetId !== 'squad';
+    UI.el.addPlayerBtn.hidden = widgetId !== 'players';
     if (widgetId === 'lineups') {
       renderPitch();
       renderSavedLineupsList();
@@ -116,6 +116,16 @@
     const groupLabel = (Players.GROUPS.find(g => g.id === state.activeGroup) || {}).label || '';
     UI.renderSquadList(filtered, groupAll.length, groupLabel);
     UI.renderActiveFilters(gs(), onRemoveActiveFilter);
+
+    // Total Price banner: Shortlist only, always the whole section's
+    // total regardless of any active search/filter.
+    if (state.activeGroup === 'shortlist') {
+      const total = groupAll.reduce((sum, p) => sum + (p.value || 0), 0);
+      UI.el.shortlistTotal.hidden = false;
+      UI.el.shortlistTotalValue.textContent = Players.formatValue(total) || '£0.00';
+    } else {
+      UI.el.shortlistTotal.hidden = true;
+    }
   }
 
   // ---------- Squad section switch ----------
@@ -441,6 +451,9 @@
     UI.el.calcPotentialBtn.addEventListener('click', onCalculatePotential);
     UI.el.playerForm.value.addEventListener('focus', onValueFieldFocus);
     UI.el.playerForm.value.addEventListener('blur', onValueFieldBlur);
+    UI.el.fieldSquadSection.addEventListener('change', () => {
+      UI.updateValueFieldLabel(UI.el.fieldSquadSection.value);
+    });
 
     // Screenshot import has its own module (import.js) which wires up
     // its own button/sheet events via ScreenshotImport.init() below.
@@ -477,6 +490,14 @@
       Players.setPlayerGroup(player.id, targetGroup);
       const targetLabel = (Players.GROUPS.find(g => g.id === targetGroup) || {}).label || targetGroup;
       UI.showToast(`${player.name} moved to ${targetLabel}`);
+      UI.closeSheet(UI.el.detailBackdrop, UI.el.detailSheet);
+      render();
+    });
+    UI.el.detailSignPlayerBtn.addEventListener('click', () => {
+      const player = Players.getById(state.activeId);
+      if (!player) return;
+      Players.signPlayer(player.id);
+      UI.showToast(`${player.name} signed to First Team`);
       UI.closeSheet(UI.el.detailBackdrop, UI.el.detailSheet);
       render();
     });
@@ -1011,6 +1032,7 @@
       f.position.value = data.position;
       UI.ensureOptionPresent(f.position, data.position);
     }
+    if (data.potential !== null && data.potential !== undefined) f.potential.value = data.potential;
     if (data.value !== null && data.value !== undefined) {
       f.value.value = Players.formatValueForInput(data.value);
     }
@@ -1020,16 +1042,28 @@
     }
 
     // Both screenshots provided -> First Team (the default group).
-    // Financial screenshot missing -> Academy, since that's the usual
+    // A Global Transfer Network screenshot -> Shortlist, since that's
+    // what scouting reports are for (it never provides a Financial
+    // screenshot, so this is checked before that case below).
+    // Financial screenshot missing otherwise -> Academy, the usual
     // pattern for youth prospects (no financial details tracked yet).
     const firstTeamGroup = Players.DEFAULT_GROUP;
-    const otherGroup = (Players.GROUPS.find(g => g.id !== firstTeamGroup) || {}).id || firstTeamGroup;
-    f.squadSection.value = data.hasFinancial ? firstTeamGroup : otherGroup;
+    let targetGroup;
+    if (data.hasFinancial) {
+      targetGroup = firstTeamGroup;
+    } else if (data.isTransferNetwork) {
+      targetGroup = (Players.GROUPS.find(g => g.id === 'shortlist') || {}).id || firstTeamGroup;
+    } else {
+      targetGroup = (Players.GROUPS.find(g => g.id !== firstTeamGroup) || {}).id || firstTeamGroup;
+    }
+    f.squadSection.value = targetGroup;
+    UI.updateValueFieldLabel(targetGroup);
 
     UI.clearFormErrors();
-    // Tactical role, Potential, PlayStyle+, and Notes are deliberately
-    // left untouched for manual entry/review, as is anything that
-    // couldn't be confidently read.
+    // Tactical role, PlayStyle+, and Notes are deliberately left
+    // untouched for manual entry/review, as is Potential unless a
+    // Global Transfer Network screenshot supplied a confident range —
+    // and, either way, anything that couldn't be confidently read.
   }
 
   document.addEventListener('DOMContentLoaded', init);

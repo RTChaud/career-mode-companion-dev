@@ -37,6 +37,8 @@ const UI = (() => {
     emptyStateText: document.getElementById('emptyStateText'),
     emptyStateClearBtn: document.getElementById('emptyStateClearBtn'),
     activeFilters: document.getElementById('activeFilters'),
+    shortlistTotal: document.getElementById('shortlistTotal'),
+    shortlistTotalValue: document.getElementById('shortlistTotalValue'),
 
     searchInput: document.getElementById('searchInput'),
     clearSearchBtn: document.getElementById('clearSearchBtn'),
@@ -62,6 +64,7 @@ const UI = (() => {
     fieldPosition: document.getElementById('fieldPosition'),
     fieldRole: document.getElementById('fieldRole'),
     fieldSquadSection: document.getElementById('fieldSquadSection'),
+    fieldValueLabel: document.getElementById('fieldValueLabel'),
     playstylesChips: document.getElementById('playstylesChips'),
     playstylesPlusChips: document.getElementById('playstylesPlusChips'),
     formSaveBtn: document.getElementById('formSaveBtn'),
@@ -78,6 +81,7 @@ const UI = (() => {
     detailPosition: document.getElementById('detailPosition'),
     detailRole: document.getElementById('detailRole'),
     detailValueRow: document.getElementById('detailValueRow'),
+    detailValueLabel: document.getElementById('detailValueLabel'),
     detailValue: document.getElementById('detailValue'),
     detailStyles: document.getElementById('detailStyles'),
     detailStylesList: document.getElementById('detailStylesList'),
@@ -85,6 +89,7 @@ const UI = (() => {
     detailStylesPlusList: document.getElementById('detailStylesPlusList'),
     detailNotes: document.getElementById('detailNotes'),
     detailMoveGroupBtn: document.getElementById('detailMoveGroupBtn'),
+    detailSignPlayerBtn: document.getElementById('detailSignPlayerBtn'),
 
     confirmBackdrop: document.getElementById('confirmBackdrop'),
     confirmDialog: document.getElementById('confirmDialog'),
@@ -339,6 +344,13 @@ const UI = (() => {
     }
   }
 
+  /** Shows "Price" instead of "Value" while the Squad section is set to
+   *  Shortlist — it's the same underlying field either way, just a
+   *  different label for what the number means in that section. */
+  function updateValueFieldLabel(groupId) {
+    el.fieldValueLabel.textContent = groupId === 'shortlist' ? 'Price' : 'Value';
+  }
+
   function fillForm(player) {
     const f = el.playerForm;
     f.name.value = player ? player.name : '';
@@ -353,6 +365,7 @@ const UI = (() => {
 
     f.squadSection.value = player ? player.playerGroup : Players.DEFAULT_GROUP;
     ensureOptionPresent(f.squadSection, player ? player.playerGroup : '');
+    updateValueFieldLabel(f.squadSection.value);
 
     f.role.value = player ? (player.role || '') : '';
     ensureOptionPresent(f.role, player ? player.role : '');
@@ -392,6 +405,7 @@ const UI = (() => {
     el.detailRole.textContent = player.role || 'No role set';
 
     const formattedValue = Players.formatValue(player.value);
+    el.detailValueLabel.textContent = player.playerGroup === 'shortlist' ? 'Price' : 'Value';
     if (formattedValue) {
       el.detailValueRow.hidden = false;
       el.detailValue.textContent = formattedValue;
@@ -411,6 +425,16 @@ const UI = (() => {
     }
 
     el.detailNotes.textContent = player.notes ? player.notes : 'No notes added.';
+
+    if (player.playerGroup === 'shortlist') {
+      // Shortlisted players get the dedicated "Sign Player" action
+      // instead of the generic Move toggle (Sign Player also clears
+      // the shortlist Price, which a generic move never should).
+      el.detailMoveGroupBtn.hidden = true;
+      el.detailSignPlayerBtn.hidden = false;
+      return;
+    }
+    el.detailSignPlayerBtn.hidden = true;
 
     // Promote/Move action: moves the player into the next other configured
     // section. Moving into the default section (First Team) reads as a
@@ -494,6 +518,7 @@ const UI = (() => {
     renderChipGroup, renderSortChips, renderRadioChips, setSortDirectionUI,
     openSheet, closeSheet,
     populateSelect, populateSelectWithLabels, ensureOptionPresent, fillForm, clearFormErrors, showFieldError,
+    updateValueFieldLabel,
     fillDetail,
     openConfirm, closeConfirm,
     openInfo, closeInfo,

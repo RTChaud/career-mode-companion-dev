@@ -86,6 +86,29 @@ const ScreenshotImport = (() => {
     [827 / 1280, 486 / 720, 80 / 1280, 20 / 720], [912 / 1280, 486 / 720, 80 / 1280, 20 / 720],
   ];
 
+  // ---- Global Transfer Network screenshots (Shortlist scouting) ----
+  // A completely different screen from the Squad Hub ones above — same
+  // player-detail-panel idea, but a different position/size, and it
+  // additionally shows a Potential range (which Squad Hub's Attributes
+  // screen never shows). Detected automatically from the header text,
+  // so either screenshot type can be dropped into the same "Attributes
+  // screenshot" picker.
+  const TRANSFER_NETWORK_HEADER_REGION = [225 / 1280, 48 / 720, 265 / 1280, 24 / 720];
+  const TRANSFER_NETWORK_REGIONS = {
+    overall: [802 / 1280, 160 / 720, 38 / 1280, 18 / 720],
+    position: [860 / 1280, 162 / 720, 75 / 1280, 15 / 720],
+    firstName: [802 / 1280, 187 / 720, 198 / 1280, 13 / 720],
+    lastName: [824 / 1280, 205 / 720, 226 / 1280, 21 / 720],
+    age: [874 / 1280, 243 / 720, 22 / 1280, 20 / 720],
+    potentialRange: [802 / 1280, 251 / 720, 62 / 1280, 13 / 720],
+  };
+  const TRANSFER_NETWORK_PLAYSTYLE_LABEL_BOXES = [
+    [675 / 1280, 407 / 720, 115 / 1280, 28 / 720], [810 / 1280, 407 / 720, 115 / 1280, 28 / 720],
+    [943 / 1280, 407 / 720, 115 / 1280, 28 / 720], [1076 / 1280, 407 / 720, 114 / 1280, 28 / 720],
+    [675 / 1280, 499 / 720, 115 / 1280, 26 / 720], [810 / 1280, 499 / 720, 115 / 1280, 26 / 720],
+    [943 / 1280, 499 / 720, 115 / 1280, 26 / 720], [1076 / 1280, 499 / 720, 114 / 1280, 26 / 720],
+  ];
+
   const CONFUSABLE_PAIRS = { VW: 0.3, GI: 0.5, AG: 0.5, O0: 0.1, I1: 0.1, S5: 0.3 };
   function subCost(a, b) {
     if (a === b) return 0;
@@ -238,13 +261,13 @@ const ScreenshotImport = (() => {
   }
 
   /**
-   * Extracts everything obtainable from the Attributes screenshot:
-   * name, age, overall, position, and PlayStyles. Any individual field
-   * that can't be read confidently comes back as null (or, for
-   * playstyles, simply omitted) rather than guessed.
+   * Extracts everything obtainable from a Squad Hub Attributes
+   * screenshot: name, age, overall, position, and PlayStyles. Any
+   * individual field that can't be read confidently comes back as null
+   * (or, for playstyles, simply omitted) rather than guessed.
    */
-  async function extractFromAttributesImage(worker, img) {
-    const result = { name: null, age: null, overall: null, position: null, playstyles: [] };
+  async function extractFromSquadHubAttributesImage(worker, img) {
+    const result = { name: null, age: null, overall: null, position: null, potential: null, playstyles: [] };
 
     const firstRaw = await ocrCanvas(worker, cropToCanvas(img, SCREENSHOT_REGIONS.firstName, 3), { psm: 7 });
     const lastRaw = await ocrCanvas(worker, cropToCanvas(img, SCREENSHOT_REGIONS.lastName, 3), { psm: 7 });
@@ -287,6 +310,85 @@ const ScreenshotImport = (() => {
     return result;
   }
 
+  /**
+   * Checks the screenshot's header text to tell a Global Transfer
+   * Network scouting screen apart from a Squad Hub Attributes screen —
+   * they use completely different layouts, so extraction must be
+   * routed to the matching function.
+   */
+  async function isTransferNetworkScreenshot(worker, img) {
+    const headerText = await ocrCanvas(worker, cropToCanvas(img, TRANSFER_NETWORK_HEADER_REGION, 3), { psm: 7 });
+    return /transfer/i.test(headerText);
+  }
+
+  /**
+   * Extracts everything obtainable from a Global Transfer Network
+   * scouting screenshot: name, age, overall, position, PlayStyles, and
+   * — unlike the Squad Hub Attributes screen — a Potential range, which
+   * is reduced to a single number via Math.floor((min + max) / 2).
+   */
+  async function extractFromTransferNetworkImage(worker, img) {
+    const result = { name: null, age: null, overall: null, position: null, potential: null, playstyles: [] };
+
+    const firstRaw = await ocrCanvas(worker, cropToCanvas(img, TRANSFER_NETWORK_REGIONS.firstName, 3), { psm: 7 });
+    const lastRaw = await ocrCanvas(worker, cropToCanvas(img, TRANSFER_NETWORK_REGIONS.lastName, 3), { psm: 7 });
+    const first = firstRaw.replace(/[^A-Za-z' -]/g, '').trim();
+    const last = lastRaw.replace(/[^A-Za-z' -]/g, '').trim();
+    const namesLookValid = first.length >= 2 && last.length >= 2
+      && first.length <= 30 && last.length <= 30
+      && first.toLowerCase() !== last.toLowerCase();
+    if (namesLookValid) result.name = `${titleCase(first)} ${titleCase(last)}`;
+
+    const ageCanvas = maxChannelThreshold(cropToCanvas(img, TRANSFER_NETWORK_REGIONS.age, 8), 70);
+    const ageText = await ocrCanvas(worker, ageCanvas, { psm: 8, whitelist: '0123456789' });
+    const age = parseInt(ageText, 10);
+    if (Number.isFinite(age) && age >= 15 && age <= 45) result.age = age;
+
+    // This screen's Overall digits render thinner than Squad Hub's, so
+    // they need a lower binarization threshold to survive intact.
+    const overallCanvas = maxChannelThreshold(cropToCanvas(img, TRANSFER_NETWORK_REGIONS.overall, 8), 70);
+    const overallText = await ocrCanvas(worker, overallCanvas, { psm: 8, whitelist: '0123456789' });
+    const overall = parseInt(overallText, 10);
+    if (Number.isFinite(overall) && overall >= 1 && overall <= 99) result.overall = overall;
+
+    const positionCanvas = maxChannelThreshold(cropToCanvas(img, TRANSFER_NETWORK_REGIONS.position, 10), 90);
+    const positionText = await ocrCanvas(worker, positionCanvas, { psm: 7 });
+    result.position = extractPositionFromText(positionText);
+
+    // Potential is shown as a "min-max" range — never guess a single
+    // endpoint; only accept a clean pair and reduce it to one number.
+    const potentialCanvas = maxChannelThreshold(cropToCanvas(img, TRANSFER_NETWORK_REGIONS.potentialRange, 6), 70);
+    const potentialText = await ocrCanvas(worker, potentialCanvas, { psm: 7, whitelist: '0123456789-' });
+    const rangeMatch = potentialText.match(/(\d{2,3})\s*-\s*(\d{2,3})/);
+    if (rangeMatch) {
+      const min = parseInt(rangeMatch[1], 10);
+      const max = parseInt(rangeMatch[2], 10);
+      if (Number.isFinite(min) && Number.isFinite(max) && min >= 1 && max <= 99 && min <= max) {
+        result.potential = Math.floor((min + max) / 2);
+      }
+    }
+
+    const seen = new Set();
+    for (const box of TRANSFER_NETWORK_PLAYSTYLE_LABEL_BOXES) {
+      const labelTextRaw = await ocrCanvas(worker, cropToCanvas(img, box, 4), { psm: 6 });
+      const labelText = labelTextRaw.replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
+      const matched = fuzzyMatchPlaystyle(labelText);
+      if (matched && !seen.has(matched)) { seen.add(matched); result.playstyles.push(matched); }
+    }
+
+    return result;
+  }
+
+  /** Detects which layout the "Attributes" screenshot is, then routes to the matching extractor. */
+  async function extractFromAttributesImage(worker, img) {
+    const isTransferNetwork = await isTransferNetworkScreenshot(worker, img);
+    const result = isTransferNetwork
+      ? await extractFromTransferNetworkImage(worker, img)
+      : await extractFromSquadHubAttributesImage(worker, img);
+    result.isTransferNetwork = isTransferNetwork;
+    return result;
+  }
+
   /** Extracts Market Value from the Financial screenshot's Player Status block. */
   async function extractFromFinancialImage(worker, img) {
     const canvas = cropToCanvas(img, SCREENSHOT_REGIONS.marketValueBand, 3);
@@ -318,7 +420,7 @@ const ScreenshotImport = (() => {
     let financialImg = null, financialUrl = null;
 
     try {
-      const merged = { name: null, age: null, overall: null, position: null, value: null, playstyles: [], hasFinancial: !!financialFile };
+      const merged = { name: null, age: null, overall: null, position: null, potential: null, value: null, playstyles: [], hasFinancial: !!financialFile, isTransferNetwork: false };
 
       if (attributesFile) {
         ({ img: attributesImg, url: attributesUrl } = await loadImageFromFile(attributesFile));
@@ -327,7 +429,9 @@ const ScreenshotImport = (() => {
         merged.age = a.age;
         merged.overall = a.overall;
         merged.position = a.position;
+        merged.potential = a.potential;
         merged.playstyles = a.playstyles;
+        merged.isTransferNetwork = a.isTransferNetwork;
       }
 
       if (financialFile) {
@@ -336,7 +440,7 @@ const ScreenshotImport = (() => {
       }
 
       const gotAnything = merged.name || merged.age || merged.overall || merged.position
-        || merged.value !== null || merged.playstyles.length > 0;
+        || merged.potential || merged.value !== null || merged.playstyles.length > 0;
 
       return gotAnything ? merged : null;
     } finally {

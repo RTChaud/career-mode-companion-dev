@@ -51,6 +51,7 @@ const Players = (() => {
   const GROUPS = [
     { id: 'squad', label: 'First Team' },
     { id: 'academy', label: 'Academy' },
+    { id: 'shortlist', label: 'Shortlist' },
   ];
   const DEFAULT_GROUP = GROUPS[0].id; // new players land here unless told otherwise
 
@@ -164,6 +165,21 @@ const Players = (() => {
     const idx = players.findIndex(p => p.id === id);
     if (idx === -1) return null;
     players[idx] = { ...players[idx], playerGroup: isValidGroup(groupId) ? groupId : DEFAULT_GROUP };
+    persist();
+    return players[idx];
+  }
+
+  /**
+   * "Sign Player": moves a Shortlist player to First Team and clears
+   * their shortlist Price, preserving every other field. Kept as its
+   * own targeted function (like setPlayerGroup) rather than going
+   * through update()/normalize(), so it can never accidentally touch
+   * anything else about the player.
+   */
+  function signPlayer(id) {
+    const idx = players.findIndex(p => p.id === id);
+    if (idx === -1) return null;
+    players[idx] = { ...players[idx], playerGroup: DEFAULT_GROUP, value: null };
     persist();
     return players[idx];
   }
@@ -345,7 +361,7 @@ const Players = (() => {
   return {
     POSITIONS, TACTICAL_ROLES, PLAYSTYLES, NO_ROLE, SORT_FIELDS,
     GROUPS, DEFAULT_GROUP,
-    init, getAll, getById, add, update, remove, setPlayerGroup, query,
+    init, getAll, getById, add, update, remove, setPlayerGroup, signPlayer, query,
     playstyleCount, formatValue, formatValueForInput,
     migrateLegacyPlayer, replaceAll, mergeAll, countLikelyDuplicates,
   };
