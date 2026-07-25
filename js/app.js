@@ -191,6 +191,10 @@
       const nameLine = player ? UI.escapeHtml(player.name) : slot.label;
       const roleLine = player ? `OVR ${player.overall}` : `${UI.escapeHtml(slot.role)}`;
       const badgeValue = isEmpty ? slot.label : String(displayMode.getValue(player));
+      // A player pulled in from Academy or Shortlist isn't actually
+      // available to the First Team — italicize their name on the
+      // pitch so that's obvious at a glance.
+      const notFirstTeam = player && player.playerGroup !== Players.DEFAULT_GROUP;
 
       return `
         <div class="pitch-slot ${isEmpty ? 'is-empty' : ''}" style="left:${slot.x}%; top:${slot.y}%;"
@@ -200,7 +204,7 @@
             <span class="pitch-slot__marker">${UI.escapeHtml(badgeValue)}
               ${showWarning ? '<span class="pitch-slot__warning">!</span>' : ''}
             </span>
-            <span class="pitch-slot__name">${nameLine}</span>
+            <span class="pitch-slot__name ${notFirstTeam ? 'pitch-slot__name--other-section' : ''}">${nameLine}</span>
             <span class="pitch-slot__role">${roleLine}</span>
           </button>
           ${!isEmpty ? `<button type="button" class="pitch-slot__change" data-slot-key="${UI.escapeHtml(slot.key)}" aria-label="Change player">⇄</button>` : ''}
