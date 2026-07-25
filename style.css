@@ -229,6 +229,7 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
   font-family: var(--font-mono);
   font-size: 15px;
 }
+.shortlist-total[hidden] { display: none; }
 .active-filter-chip {
   display: flex;
   align-items: center;
@@ -975,6 +976,10 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
   white-space: normal;
   overflow-wrap: break-word;
   text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
+.pitch-slot__name--other-section {
+  font-style: italic;
+  color: var(--text-muted);
 }
 .pitch-slot__role {
   font-size: 9px;
