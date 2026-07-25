@@ -1093,6 +1093,99 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 }
 .player-select-row__stats b { color: var(--accent); }
 
+/* ============ Tactics: Roles / Lineups sub-switch ============ */
+#tacticsSubSegmentedControl {
+  margin-bottom: 16px;
+}
+
+/* ============ Role detail (tactical reference) ============ */
+.sheet__header-spacer {
+  min-width: 52px;
+}
+.role-detail__top {
+  margin-bottom: 6px;
+}
+.role-detail__top h3 {
+  font-size: 21px;
+}
+.role-detail__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.role-detail__list li {
+  position: relative;
+  padding-left: 18px;
+  color: var(--text);
+  font-size: 14.5px;
+  line-height: 1.4;
+}
+.role-detail__list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.role-detail__empty {
+  color: var(--text-faint);
+  font-size: 13.5px;
+  font-style: italic;
+}
+
+.attribute-tier {
+  margin-bottom: 16px;
+}
+.attribute-tier:last-child { margin-bottom: 0; }
+.attribute-tier__stars {
+  color: var(--accent);
+  font-size: 15px;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+.attribute-tier__stars .is-empty { color: var(--line); }
+
+.playstyle-tier {
+  margin-bottom: 16px;
+}
+.playstyle-tier:last-child { margin-bottom: 0; }
+.playstyle-tier__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.playstyle-tier__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 6px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 12.5px;
+  color: var(--bg);
+  background: var(--accent);
+}
+.playstyle-tier__badge--a { background: #4DA6FF; }
+.playstyle-tier__badge--b { background: #8FBE2E; }
+.playstyle-tier__badge--c { background: var(--text-muted); }
+.playstyle-tier__badge--d { background: var(--text-faint); }
+.playstyle-tier__label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
 /* ============ Desktop ============ */
 @media (min-width: 720px) {
   .app { padding-top: 32px; }

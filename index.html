@@ -72,29 +72,47 @@
 
   </div>
 
-  <!-- Lineups widget -->
-  <div id="lineupsView" hidden>
+  <!-- Tactics widget -->
+  <div id="tacticsView" hidden>
 
-    <div class="lineup-toolbar">
-      <div class="lineup-toolbar__formation" id="formationLabel">4-3-3 Attack</div>
-      <button class="btn btn--ghost btn--small" id="manageTacticsBtn">Manage Tactics</button>
+    <!-- Roles / Lineups sub-switch -->
+    <div class="segmented-control" id="tacticsSubSegmentedControl" role="tablist" aria-label="Switch tactics view"></div>
+
+    <!-- Roles sub-view: read-only tactical reference for the current formation -->
+    <div id="rolesSubview">
+      <div class="lineup-toolbar">
+        <div class="lineup-toolbar__formation" id="rolesFormationLabel">4-3-3 Attack</div>
+        <button class="btn btn--ghost btn--small" id="rolesManageTacticsBtn">Manage Tactics</button>
+      </div>
+
+      <div class="pitch" id="rolesPitch"></div>
     </div>
 
-    <div class="display-mode-control" id="displayModeControl" role="tablist" aria-label="Choose what the pitch badges show"></div>
+    <!-- Lineups sub-view (existing feature, unchanged) -->
+    <div id="lineupsSubview" hidden>
 
-    <div class="pitch" id="pitch"></div>
+      <div class="lineup-toolbar">
+        <div class="lineup-toolbar__formation" id="formationLabel">4-3-3 Attack</div>
+        <button class="btn btn--ghost btn--small" id="manageTacticsBtn">Manage Tactics</button>
+      </div>
 
-    <div class="lineup-actions">
-      <button class="btn btn--ghost" id="newLineupBtn">New Lineup</button>
-      <button class="btn btn--primary" id="saveLineupBtn">Save Lineup</button>
-    </div>
+      <div class="display-mode-control" id="displayModeControl" role="tablist" aria-label="Choose what the pitch badges show"></div>
 
-    <h2 class="lineup-section-title">Saved Lineups</h2>
-    <div id="savedLineupsList"></div>
-    <div class="empty-state" id="lineupsEmptyState" hidden>
-      <div class="empty-state__icon">📋</div>
-      <h2>No saved lineups yet</h2>
-      <p>Build a starting XI on the pitch above, then tap Save Lineup.</p>
+      <div class="pitch" id="pitch"></div>
+
+      <div class="lineup-actions">
+        <button class="btn btn--ghost" id="newLineupBtn">New Lineup</button>
+        <button class="btn btn--primary" id="saveLineupBtn">Save Lineup</button>
+      </div>
+
+      <h2 class="lineup-section-title">Saved Lineups</h2>
+      <div id="savedLineupsList"></div>
+      <div class="empty-state" id="lineupsEmptyState" hidden>
+        <div class="empty-state__icon">📋</div>
+        <h2>No saved lineups yet</h2>
+        <p>Build a starting XI on the pitch above, then tap Save Lineup.</p>
+      </div>
+
     </div>
 
   </div>
@@ -283,6 +301,42 @@
     <button class="btn btn--ghost" id="detailMoveGroupBtn">Move</button>
     <button class="btn btn--primary" id="detailSignPlayerBtn" hidden>Sign Player</button>
     <button class="btn btn--danger" id="detailDeleteBtn">Delete player</button>
+  </div>
+</div>
+
+<!-- Role detail (tactical reference — no player data yet) -->
+<div class="sheet-backdrop" id="roleDetailBackdrop" hidden></div>
+<div class="sheet sheet--full" id="roleDetailSheet" role="dialog" aria-modal="true" aria-labelledby="roleDetailName" hidden>
+  <div class="sheet__header">
+    <button class="btn btn--text" id="roleDetailCloseBtn">Close</button>
+    <h2 id="roleDetailSheetLabel">Role</h2>
+    <span class="sheet__header-spacer" aria-hidden="true"></span>
+  </div>
+
+  <div class="sheet__body detail-view">
+    <div class="role-detail__top">
+      <h3 id="roleDetailName">Role Name</h3>
+      <p class="detail-view__meta" id="roleDetailFocus">Focus</p>
+    </div>
+
+    <div class="detail-view__tags">
+      <span class="tag tag--position" id="roleDetailPositionTag">POS</span>
+    </div>
+
+    <section class="detail-view__section" id="roleDetailMandatorySection">
+      <h4>Mandatory Requirements</h4>
+      <ul class="role-detail__list" id="roleDetailMandatoryList"></ul>
+    </section>
+
+    <section class="detail-view__section" id="roleDetailAttributesSection">
+      <h4>Key Attributes</h4>
+      <div id="roleDetailAttributesTiers"></div>
+    </section>
+
+    <section class="detail-view__section" id="roleDetailPlaystylesSection">
+      <h4>PlayStyle Tiers</h4>
+      <div id="roleDetailPlaystyleTiers"></div>
+    </section>
   </div>
 </div>
 
