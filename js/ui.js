@@ -34,8 +34,6 @@ const UI = (() => {
     roleDetailName: document.getElementById('roleDetailName'),
     roleDetailFocus: document.getElementById('roleDetailFocus'),
     roleDetailPositionTag: document.getElementById('roleDetailPositionTag'),
-    roleDetailMandatorySection: document.getElementById('roleDetailMandatorySection'),
-    roleDetailMandatoryList: document.getElementById('roleDetailMandatoryList'),
     roleDetailAttributesSection: document.getElementById('roleDetailAttributesSection'),
     roleDetailAttributesTiers: document.getElementById('roleDetailAttributesTiers'),
     roleDetailPlaystylesSection: document.getElementById('roleDetailPlaystylesSection'),
@@ -525,41 +523,41 @@ const UI = (() => {
     el.roleDetailFocus.textContent = slot.focus;
     el.roleDetailPositionTag.textContent = slot.label;
 
-    const mandatory = (data && data.mandatory) || [];
-    el.roleDetailMandatoryList.innerHTML = mandatory.length
-      ? mandatory.map(m => `<li>${escapeHtml(m)}</li>`).join('')
-      : `<p class="role-detail__empty">No mandatory requirements for this role.</p>`;
-
-    const attributeTiers = (data && data.attributeTiers) || [];
-    el.roleDetailAttributesTiers.innerHTML = attributeTiers.length
-      ? attributeTiers.map(tier => {
-          const stars = Array.from({ length: 5 }, (_, i) => `<span class="${i < tier.stars ? '' : 'is-empty'}">★</span>`).join('');
-          const items = tier.items.map(a => `<li>${escapeHtml(a)}</li>`).join('');
-          return `
-            <div class="attribute-tier">
-              <div class="attribute-tier__stars">${stars}</div>
-              <ul class="role-detail__list">${items}</ul>
-            </div>
-          `;
-        }).join('')
+    const keyAttributes = (data && data.keyAttributes) || [];
+    el.roleDetailAttributesTiers.innerHTML = keyAttributes.length
+      ? `<ol class="role-detail__list role-detail__list--ranked">${keyAttributes.map(a => `<li>${escapeHtml(a)}</li>`).join('')}</ol>`
       : `<p class="role-detail__empty">No key attributes listed yet.</p>`;
 
-    const playstyleTiers = (data && data.playstyleTiers) || [];
-    el.roleDetailPlaystyleTiers.innerHTML = playstyleTiers.length
-      ? playstyleTiers.map(tier => {
-          const badgeClass = tier.tier === 'S' ? '' : ` playstyle-tier__badge--${tier.tier.toLowerCase()}`;
-          const items = tier.items.map(s => `<li>${escapeHtml(s)}</li>`).join('');
-          return `
-            <div class="playstyle-tier">
-              <div class="playstyle-tier__header">
-                <span class="playstyle-tier__badge${badgeClass}">${escapeHtml(tier.tier)}</span>
-                <span class="playstyle-tier__label">${escapeHtml(tier.tier)} Tier</span>
-              </div>
-              <ul class="role-detail__list">${items}</ul>
-            </div>
-          `;
-        }).join('')
+    // Fixed S → A → B → C order, then Low Value as its own (non-"tier")
+    // group at the end — this is the exact mapping a future player page
+    // will reuse to colour a player's PlayStyles by usefulness for this
+    // role (S/A/B/C green→orange, Low Value red).
+    const tiers = (data && data.playstyleTiers) || {};
+    const tierBlocks = ['S', 'A', 'B', 'C']
+      .filter(tier => tiers[tier] && tiers[tier].length)
+      .map(tier => playstyleTierHtml(tier, `${tier} Tier`, tiers[tier]));
+    const lowValue = (data && data.lowValuePlaystyles) || [];
+    if (lowValue.length) {
+      tierBlocks.push(playstyleTierHtml('low', 'Low Value', lowValue));
+    }
+    el.roleDetailPlaystyleTiers.innerHTML = tierBlocks.length
+      ? tierBlocks.join('')
       : `<p class="role-detail__empty">No PlayStyle tiers listed yet.</p>`;
+  }
+
+  function playstyleTierHtml(tierKey, label, items) {
+    const badgeClass = ` playstyle-tier__badge--${tierKey.toLowerCase()}`;
+    const badgeText = tierKey === 'low' ? '!' : tierKey;
+    const listItems = items.map(s => `<li>${escapeHtml(s)}</li>`).join('');
+    return `
+      <div class="playstyle-tier">
+        <div class="playstyle-tier__header">
+          <span class="playstyle-tier__badge${badgeClass}">${escapeHtml(badgeText)}</span>
+          <span class="playstyle-tier__label">${escapeHtml(label)}</span>
+        </div>
+        <ul class="role-detail__list">${listItems}</ul>
+      </div>
+    `;
   }
 
   // ---------- Toast ----------
