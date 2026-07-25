@@ -1139,17 +1139,27 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
   font-style: italic;
 }
 
-.attribute-tier {
-  margin-bottom: 16px;
+/* Key Attributes: order conveys importance, so number them instead of
+   using plain bullets. */
+.role-detail__list--ranked {
+  counter-reset: rank;
 }
-.attribute-tier:last-child { margin-bottom: 0; }
-.attribute-tier__stars {
+.role-detail__list--ranked li {
+  padding-left: 26px;
+}
+.role-detail__list--ranked li::before {
+  counter-increment: rank;
+  content: counter(rank);
+  width: auto;
+  height: auto;
+  top: 0;
+  border-radius: 0;
+  background: none;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 13px;
   color: var(--accent);
-  font-size: 15px;
-  letter-spacing: 2px;
-  margin-bottom: 8px;
 }
-.attribute-tier__stars .is-empty { color: var(--line); }
 
 .playstyle-tier {
   margin-bottom: 16px;
@@ -1175,10 +1185,13 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
   color: var(--bg);
   background: var(--accent);
 }
-.playstyle-tier__badge--a { background: #4DA6FF; }
-.playstyle-tier__badge--b { background: #8FBE2E; }
-.playstyle-tier__badge--c { background: var(--text-muted); }
-.playstyle-tier__badge--d { background: var(--text-faint); }
+/* Same S/A/B/C/Low-Value colour scale a future player page will reuse
+   to shade a player's own PlayStyles by usefulness for their role. */
+.playstyle-tier__badge--s { background: #4CAF50; }
+.playstyle-tier__badge--a { background: #8BC34A; }
+.playstyle-tier__badge--b { background: #E8A33D; }
+.playstyle-tier__badge--c { background: #E8633D; }
+.playstyle-tier__badge--low { background: var(--danger); }
 .playstyle-tier__label {
   font-size: 12px;
   text-transform: uppercase;
