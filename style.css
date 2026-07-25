@@ -863,7 +863,7 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 .pitch {
   position: relative;
   width: 100%;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 3 / 4.55;
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background:
